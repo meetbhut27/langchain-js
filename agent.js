@@ -3,7 +3,7 @@ dotenv.config();
 
 import readline from "readline";
 
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOpenAI } from "@langchain/";
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -49,7 +49,10 @@ const retriever = vectorStore.asRetriever({
 
 // Instantiate the model
 const model = new ChatOpenAI({
-  modelName: "gpt-3.5-turbo-1106",
+  modelName: "meta-llama/llama-3.3-8b-instruct:free",
+  configuration: {
+    baseURL: "https://openrouter.ai/api/v1",
+  },
   temperature: 0.2,
 });
 

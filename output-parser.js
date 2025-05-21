@@ -14,7 +14,10 @@ dotenv.config();
 
 // Instantiate the model
 const model = new ChatOpenAI({
-  modelName: "gpt-3.5-turbo",
+  modelName: "meta-llama/llama-3.3-8b-instruct:free",
+  configuration: {
+    baseURL: "https://openrouter.ai/api/v1",
+  },  
   temperature: 0.9,
 });
 
@@ -30,10 +33,7 @@ async function callStringOutputParser() {
 
 async function callListOutputParser() {
   const prompt = ChatPromptTemplate.fromMessages([
-    [
-      "system",
-      "Provide 5 synonyms, seperated by commas, for a word that the user will provide.",
-    ],
+    [ "system", "Provide 5 synonyms, seperated by commas, for a word that the user will provide.",],
     ["human", "{word}"],
   ]);
   const outputParser = new CommaSeparatedListOutputParser();
@@ -85,7 +85,7 @@ async function callZodStructuredParser() {
 }
 
 // const response = await callStringOutputParser();
-// const response = await callListOutputParser();
+const response = await callListOutputParser();
 // const response = await callStructuredParser();
-const response = await callZodStructuredParser();
+// const response = await callZodStructuredParser();
 console.log(response);

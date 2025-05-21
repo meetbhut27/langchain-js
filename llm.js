@@ -14,7 +14,10 @@ const rl = readline.createInterface({
 // Create a function to call the Langchain API
 async function chatCompletion(text) {
   const model = new ChatOpenAI({
-    modelName: "gpt-3.5-turbo",
+    modelName: "meta-llama/llama-3.3-8b-instruct:free",
+    configuration: {
+      baseURL: "https://openrouter.ai/api/v1",
+    },    
     temperature: 0.9,
   });
 
