@@ -1,6 +1,8 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
+import readline from "readline";
+
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 
@@ -11,73 +13,63 @@ import { RunnableSequence } from "@langchain/core/runnables";
 import { BufferMemory } from "langchain/memory";
 import { UpstashRedisChatMessageHistory } from "@langchain/community/stores/message/upstash_redis";
 
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
 const model = new ChatOpenAI({
   modelName: "meta-llama/llama-3.3-8b-instruct:free",
   configuration: {
     baseURL: "https://openrouter.ai/api/v1",
-  },  
+  },
   temperature: 0.7,
 });
 
-const prompt = ChatPromptTemplate.fromTemplate(`
-You are an AI assistant called Max. You are here to help answer questions and provide information to the best of your ability.
-Chat History: {history}
-{input}`);
+const prompt = ChatPromptTemplate.fromTemplate(
+  `You are an AI assistant called Max. You are here to help answer questions and provide information to the best of your ability.
+  Chat History: {history}
+  {input}`
+);
 
 const upstashMessageHistory = new UpstashRedisChatMessageHistory({
-  sessionId: "mysession",
+  sessionId: "lagchain-chat",
   config: {
     url: process.env.UPSTASH_REDIS_URL,
     token: process.env.UPSTASH_REST_TOKEN,
   },
 });
+
 const memory = new BufferMemory({
   memoryKey: "history",
   chatHistory: upstashMessageHistory,
 });
 
 // Using Chain Class
-// const chain = new ConversationChain({
-//   llm: model,
-//   prompt,
-//   memory,
-// });
-
-// Using LCEL
-// const chain = prompt.pipe(model);
-const chain = RunnableSequence.from([
-  {
-    input: (initialInput) => initialInput.input,
-    memory: () => memory.loadMemoryVariables({}),
-  },
-  {
-    input: (previousOutput) => previousOutput.input,
-    history: (previousOutput) => previousOutput.memory.history,
-  },
+const chain = new ConversationChain({
+  llm: model,
   prompt,
-  model,
-]);
-
-// Testing Responses
-
-// console.log("Initial Chat Memory", await memory.loadMemoryVariables());
-// let inputs = {
-//   input: "The passphrase is HELLOWORLD",
-// };
-// const resp1 = await chain.invoke(inputs);
-// console.log(resp1);
-// await memory.saveContext(inputs, {
-//   output: resp1.content,
-// });
-
-console.log("Updated Chat Memory", await memory.loadMemoryVariables());
-
-let inputs2 = {
-  input: "What is the passphrase?",
-};
-
-const resp2 = await chain.invoke(inputs2);
-console.log(resp2);
-await memory.saveContext(inputs2, {
-  output: resp2.content,
+  memory,
 });
+
+function askQuestion() {
+  
+  rl.question("User: ", async (input) => {
+    
+    if (input.toLowerCase() === "exit") {
+      rl.close();
+      return;
+    }
+    
+    const response = await chain.invoke({
+      input: input,
+    });
+    
+    console.log("Output: ", response.response);
+    
+    askQuestion();
+  });
+}
+
+askQuestion();
+// console.log("Chat Memory", await memory.loadMemoryVariables());

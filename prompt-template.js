@@ -1,5 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { StringOutputParser } from "@langchain/core/output_parsers";
 
 // Import environment variables
 import * as dotenv from "dotenv";
@@ -14,22 +15,21 @@ const model = new ChatOpenAI({
   temperature: 0.9,
 });
 
+const outputParser = new StringOutputParser();
+
 // Create Prompt Template using fromTemplate
-// const prompt = ChatPromptTemplate.fromTemplate('Tell a joke about {word}');
+const prompt1 = ChatPromptTemplate.fromTemplate('Tell a joke about {word}');
 
 // Create Prompt Template from fromMessages
-const prompt = ChatPromptTemplate.fromMessages([
-  [
-    "system",
-    "You are a talented chef.  Create a recipe based on a main ingredient provided by the user.",
-  ],
-  ["human", "{word}"],
-]);
+// const prompt2 = ChatPromptTemplate.fromMessages([
+//   [ "system", "You are a talented chef.  Create a recipe based on a main ingredient provided by the user."],
+//   ["human", "{word}"],
+// ]);
 
-const chain = prompt.pipe(model);
+const chain = prompt1.pipe(model).pipe(outputParser);
 
 const response = await chain.invoke({
-  word: "chicken",
+  word: "apple",
 });
 
 console.log(response);

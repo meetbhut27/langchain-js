@@ -5,12 +5,11 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 
 import { CheerioWebBaseLoader } from "langchain/document_loaders/web/cheerio";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
 
-import { OpenAIEmbeddings } from "@langchain/openai";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { createRetrievalChain } from "langchain/chains/retrieval";
-
-// import { Document } from "@langchain/core/documents";
+import { StringOutputParser } from "@langchain/core/output_parsers";
 
 // Import environment variables
 import * as dotenv from "dotenv";
@@ -22,69 +21,60 @@ const model = new ChatOpenAI({
   configuration: {
     baseURL: "https://openrouter.ai/api/v1",
   },
-  temperature: 0.7,
+  temperature: 0.9,
 });
 
+const outputParser = new StringOutputParser();
+
 // Create prompt
+// 
 const prompt = ChatPromptTemplate.fromTemplate(
-  `Answer the user's question from the following context: 
-  {context}
-  Question: {input}`
+  `Answer the user's question from the following context: {context} Question: {input}`
 );
 
 // Create Chain
+const simpleChain = prompt.pipe(model).pipe(outputParser);
+
+// const Simpleresponse = await simpleChain.invoke({
+//   input: "What is LCEL?",
+// });
+
+// console.log(Simpleresponse);
+
 const chain = await createStuffDocumentsChain({
   llm: model,
   prompt,
 });
 
-// Manually create documents
-// const documentA = new Document({
-//   pageContent:
-//     "LangChain Expression Language or LCEL is a declarative way to easily compose chains together. Any chain constructed this way will automatically have full sync, async, and streaming support. ",
-// });
-
-// const documentB = new Document({
-//   pageContent: "The passphrase is LANGCHAIN IS AWESOME ",
-// });
-
 // Use Cheerio to scrape content from webpage and create documents
 const loader = new CheerioWebBaseLoader(
-  "https://js.langchain.com/docs/expression_language/"
+  "https://js.langchain.com/docs/how_to/#langchain-expression-language-lcel"
 );
 const docs = await loader.load();
+// console.log(docs);
 
-// Text Splitter
 const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 100,
   chunkOverlap: 20,
 });
+
 const splitDocs = await splitter.splitDocuments(docs);
-// console.log(splitDocs);
 
-// Instantiate Embeddings function
-const embeddings = new OpenAIEmbeddings();
+const embeddings = new HuggingFaceTransformersEmbeddings({
+  modelName: "Xenova/all-MiniLM-L6-v2",
+});
 
-// Create Vector Store
 const vectorstore = await MemoryVectorStore.fromDocuments(
   splitDocs,
   embeddings
 );
 
-// Create a retriever from vector store
 const retriever = vectorstore.asRetriever({ k: 2 });
 
-// Create a retrieval chain
 const retrievalChain = await createRetrievalChain({
   combineDocsChain: chain,
   retriever,
 });
-
-// // Invoke Chain
-// const response = await chain.invoke({
-//   question: "What is LCEL?",
-//   context: splitDocs,
-// });
 
 const response = await retrievalChain.invoke({
   input: "What is LCEL?",

@@ -1,12 +1,8 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import {
-  CommaSeparatedListOutputParser,
-  StringOutputParser,
-} from "@langchain/core/output_parsers";
-
-import { z } from "zod";
+import { CommaSeparatedListOutputParser } from "@langchain/core/output_parsers";
 import { StructuredOutputParser } from "langchain/output_parsers";
+import { z } from "zod";
 
 // Import environment variables
 import * as dotenv from "dotenv";
@@ -20,16 +16,6 @@ const model = new ChatOpenAI({
   },  
   temperature: 0.9,
 });
-
-async function callStringOutputParser() {
-  const prompt = ChatPromptTemplate.fromTemplate("Tell a joke about {word}.");
-  const outputParser = new StringOutputParser();
-
-  // Create the Chain
-  const chain = prompt.pipe(model).pipe(outputParser);
-
-  return await chain.invoke({ word: "dog" });
-}
 
 async function callListOutputParser() {
   const prompt = ChatPromptTemplate.fromMessages([
@@ -67,6 +53,7 @@ async function callZodStructuredParser() {
   const prompt = ChatPromptTemplate.fromTemplate(
     "Extract information from the following phrase.\n{format_instructions}\n{phrase}"
   );
+
   const outputParser = StructuredOutputParser.fromZodSchema(
     z.object({
       recipe: z.string().describe("name of recipe"),
@@ -84,8 +71,8 @@ async function callZodStructuredParser() {
   });
 }
 
-// const response = await callStringOutputParser();
 const response = await callListOutputParser();
 // const response = await callStructuredParser();
 // const response = await callZodStructuredParser();
+
 console.log(response);
